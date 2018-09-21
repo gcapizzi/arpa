@@ -34,6 +34,9 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - wai
+    - warp
+    - http-types
     - arpa
 
 tests:
