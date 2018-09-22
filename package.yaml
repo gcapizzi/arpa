@@ -24,6 +24,10 @@ dependencies:
 
 library:
   source-dirs: src
+  dependencies:
+  - bytestring
+  - wai
+  - http-types
 
 executables:
   arpa-exe:
@@ -34,10 +38,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - bytestring
-    - wai
     - warp
-    - http-types
     - arpa
 
 tests:
