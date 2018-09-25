@@ -51,3 +51,6 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - arpa
+    - hspec
+    - http-types
+    - http-client
