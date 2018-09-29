@@ -28,6 +28,8 @@ library:
   - bytestring
   - wai
   - http-types
+  # - path
+  - directory
 
 executables:
   arpa-exe:

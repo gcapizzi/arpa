@@ -11,7 +11,13 @@ get manager path = do
 
 main :: IO ()
 main = hspec $ beforeAll (newManager defaultManagerSettings) $
-  describe "arpa" $
+  describe "arpa" $ do
+    it "serves the file corresponding to the specified path, relative the the working dir" $ \manager -> do
+      response <- get manager "/test/fixtures/mattina.txt"
+
+      responseStatus response `shouldBe` ok200
+      responseBody response `shouldBe` "M'illumino\nd'immenso\n"
+
     context "when the requested file does not exist" $
       it "returns a 404 response" $ \manager -> do
         response <- get manager "/foo"
