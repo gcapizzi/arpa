@@ -2,18 +2,30 @@ module Application
     ( application
     ) where
 
-import qualified Data.ByteString.Char8 as ByteString
+import Data.Maybe (maybe)
+import Data.List (isInfixOf)
+
+import qualified Data.ByteString.Char8 as ByteStringChar8
+import qualified Data.ByteString.Lazy as ByteStringLazy
+import qualified Data.ByteString.Lazy.Char8 as ByteStringLazyChar8
 import qualified Network.Wai as Wai
 import qualified Network.HTTP.Types.Status as Status
 
 application :: Wai.Application
-application request respond = respond $ fileResponse $ relativePath request
+application request respond = respond $ maybe invalidPathResponse fileResponse (relativePath request)
+
+invalidPathResponse :: Wai.Response
+invalidPathResponse = Wai.responseLBS Status.badRequest400 [] (ByteStringLazyChar8.pack "Invalid path")
 
 fileResponse :: FilePath -> Wai.Response
 fileResponse path = Wai.responseFile Status.status200 [] path Nothing
 
-relativePath :: Wai.Request -> FilePath
-relativePath request = "." ++ rawPath request
+relativePath :: Wai.Request -> Maybe FilePath
+relativePath request
+  | ".." `isInfixOf` requestPath = Nothing
+  | otherwise = Just $ "." ++ requestPath
+  where
+    requestPath = rawPath request
 
 rawPath :: Wai.Request -> FilePath
-rawPath request = ByteString.unpack $ Wai.rawPathInfo request
+rawPath request = ByteStringChar8.unpack $ Wai.rawPathInfo request

@@ -24,3 +24,10 @@ main = hspec $ beforeAll (newManager defaultManagerSettings) $
 
         responseStatus response `shouldBe` notFound404
         responseBody response `shouldBe` "File not found"
+
+    context "when the path contains .." $
+      it "returns a 400 Bad Request" $ \manager -> do
+        response <- get manager "/test/../test/fixtures/mattina.txt"
+
+        responseStatus response `shouldBe` badRequest400
+        responseBody response `shouldBe` "Invalid path"
