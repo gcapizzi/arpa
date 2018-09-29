@@ -18,7 +18,7 @@ invalidPathResponse :: Wai.Response
 invalidPathResponse = Wai.responseLBS Status.badRequest400 [] (ByteStringLazyChar8.pack "Invalid path")
 
 fileResponse :: FilePath -> Wai.Response
-fileResponse path = Wai.responseFile Status.status200 [] path Nothing
+fileResponse path = Wai.responseFile Status.ok200 [] path Nothing
 
 relativePath :: Wai.Request -> Maybe FilePath
 relativePath request
