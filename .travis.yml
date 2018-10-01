@@ -1,5 +1,10 @@
 sudo: false
+
 language: generic
+
+os:
+  - linux
+  - osx
 
 cache:
   directories:
