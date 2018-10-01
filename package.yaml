@@ -56,3 +56,4 @@ tests:
     - hspec
     - http-types
     - http-client
+    - warp

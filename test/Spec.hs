@@ -2,15 +2,22 @@
 
 import Test.Hspec
 
+import Control.Concurrent
 import Network.HTTP.Client
 import Network.HTTP.Types.Status
+import qualified Network.Wai.Handler.Warp as Warp
+import qualified Application
 
 get manager path = do
   req <- parseRequest $ "GET http://localhost:8080" ++ path
   httpLbs req manager
 
+setUp = do
+  forkIO $ Warp.run 8080 Application.application
+  newManager defaultManagerSettings
+
 main :: IO ()
-main = hspec $ beforeAll (newManager defaultManagerSettings) $
+main = hspec $ beforeAll setUp $
   describe "arpa" $ do
     it "serves the file corresponding to the specified path, relative the the working dir" $ \manager -> do
       response <- get manager "/test/fixtures/mattina.txt"
