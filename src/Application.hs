@@ -12,7 +12,7 @@ import qualified Network.Wai as Wai
 import qualified Network.HTTP.Types.Status as Status
 
 application :: Wai.Application
-application request respond = respond $ maybe invalidPathResponse fileResponse (relativePath request)
+application request respond = respond $ maybe invalidPathResponse fileResponse (fsPath request)
 
 invalidPathResponse :: Wai.Response
 invalidPathResponse = Wai.responseLBS Status.badRequest400 [] (ByteStringLazyChar8.pack "Invalid path")
@@ -20,8 +20,8 @@ invalidPathResponse = Wai.responseLBS Status.badRequest400 [] (ByteStringLazyCha
 fileResponse :: FilePath -> Wai.Response
 fileResponse path = Wai.responseFile Status.ok200 [] path Nothing
 
-relativePath :: Wai.Request -> Maybe FilePath
-relativePath request
+fsPath :: Wai.Request -> Maybe FilePath
+fsPath request
   | ".." `isInfixOf` requestPath = Nothing
   | otherwise = Just $ "." ++ requestPath
   where
