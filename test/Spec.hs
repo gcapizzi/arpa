@@ -3,14 +3,18 @@
 import Test.Hspec
 
 import Control.Concurrent
+import Data.ByteString.Lazy (ByteString)
 import Network.HTTP.Client
 import Network.HTTP.Types.Status
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Application
 
+data Response = Response Status ByteString deriving (Eq, Show)
+
 get manager path = do
   req <- parseRequest $ "GET http://localhost:8080" ++ path
-  httpLbs req manager
+  res <- httpLbs req manager
+  return $ Response (responseStatus res) (responseBody res)
 
 setUp = do
   forkIO $ Warp.run 8080 Application.application
@@ -19,22 +23,13 @@ setUp = do
 main :: IO ()
 main = hspec $ beforeAll setUp $
   describe "arpa" $ do
-    it "serves the file corresponding to the specified path, relative the the working dir" $ \manager -> do
-      response <- get manager "/test/fixtures/mattina.txt"
-
-      responseStatus response `shouldBe` ok200
-      responseBody response `shouldBe` "M'illumino\nd'immenso\n"
+    it "serves the file corresponding to the specified path, relative the the working dir" $ \manager ->
+      get manager "/test/fixtures/mattina.txt" `shouldReturn` Response ok200 "M'illumino\nd'immenso\n"
 
     context "when the requested file does not exist" $
-      it "returns a 404 response" $ \manager -> do
-        response <- get manager "/foo"
-
-        responseStatus response `shouldBe` notFound404
-        responseBody response `shouldBe` "File not found"
+      it "returns a 404 response" $ \manager ->
+        get manager "/foo" `shouldReturn` Response notFound404 "File not found"
 
     context "when the path contains .." $
-      it "returns a 400 Bad Request" $ \manager -> do
-        response <- get manager "/test/../test/fixtures/mattina.txt"
-
-        responseStatus response `shouldBe` badRequest400
-        responseBody response `shouldBe` "Invalid path"
+      it "returns a 400 Bad Request" $ \manager ->
+        get manager "/test/../test/fixtures/mattina.txt" `shouldReturn` Response badRequest400 "Invalid path"
