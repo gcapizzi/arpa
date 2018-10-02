@@ -22,10 +22,13 @@ fileResponse path = Wai.responseFile Status.ok200 [] path Nothing
 
 fsPath :: Wai.Request -> Maybe FilePath
 fsPath request
-  | "../" `isInfixOf` requestPath = Nothing
+  | hasParentDir requestPath = Nothing
   | otherwise = Just $ "." ++ requestPath
   where
     requestPath = rawPath request
 
 rawPath :: Wai.Request -> FilePath
 rawPath request = ByteStringChar8.unpack $ Wai.rawPathInfo request
+
+hasParentDir :: FilePath -> Bool
+hasParentDir = isInfixOf "../"
