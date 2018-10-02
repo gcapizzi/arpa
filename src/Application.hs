@@ -22,7 +22,7 @@ fileResponse path = Wai.responseFile Status.ok200 [] path Nothing
 
 fsPath :: Wai.Request -> Maybe FilePath
 fsPath request
-  | ".." `isInfixOf` requestPath = Nothing
+  | "../" `isInfixOf` requestPath = Nothing
   | otherwise = Just $ "." ++ requestPath
   where
     requestPath = rawPath request

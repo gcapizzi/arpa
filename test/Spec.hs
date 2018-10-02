@@ -30,6 +30,8 @@ main = hspec $ beforeAll setUp $
       it "returns a 404 response" $ \manager ->
         get manager "/foo" `shouldReturn` Response notFound404 "File not found"
 
-    context "when the path contains .." $
-      it "returns a 400 Bad Request" $ \manager ->
+    context "when the path contains a parent dir" $
+      it "returns a 400 Bad Request" $ \manager -> do
         get manager "/test/../test/fixtures/mattina.txt" `shouldReturn` Response badRequest400 "Invalid path"
+        get manager "/test/..%2Ftest/fixtures/mattina.txt" `shouldReturn` Response notFound404 "File not found"
+        get manager "/test/fixtures/foo..txt" `shouldReturn` Response notFound404 "File not found"
