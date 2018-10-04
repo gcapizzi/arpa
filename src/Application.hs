@@ -2,6 +2,7 @@ module Application
     ( application
     ) where
 
+import Data.Foldable (find)
 import Data.Maybe (maybe)
 import Data.List (isInfixOf)
 
@@ -38,17 +39,15 @@ notFoundResponse :: Wai.Response
 notFoundResponse = Wai.responseLBS Status.notFound404 [] (ByteStringLazyChar8.pack "File not found")
 
 requestPath :: Wai.Request -> Maybe FilePath
-requestPath request
-  | hasParentDir relativePath = Nothing
-  | otherwise = Just relativePath
+requestPath request = find isValidPath (Just relativePath)
   where
     relativePath = dropRoot $ rawPath request
 
 rawPath :: Wai.Request -> FilePath
 rawPath request = ByteStringChar8.unpack $ Wai.rawPathInfo request
 
-hasParentDir :: FilePath -> Bool
-hasParentDir = isInfixOf "../"
+isValidPath :: FilePath -> Bool
+isValidPath = not . isInfixOf "../"
 
 dropRoot :: FilePath -> FilePath
 dropRoot = drop 1
