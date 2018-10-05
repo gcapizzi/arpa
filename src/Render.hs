@@ -1,16 +1,19 @@
 module Render
   ( renderFile
+  , Error
   ) where
 
 import qualified Data.ByteString.Lazy as ByteStringLazy
 import qualified System.Directory as Directory
 
-renderFile :: FilePath -> IO (Maybe ByteStringLazy.ByteString)
+data Error = Error
+
+renderFile :: FilePath -> IO (Either Error ByteStringLazy.ByteString)
 renderFile path = do
   absolutePath <- Directory.makeAbsolute path
   fileExists <- Directory.doesFileExist absolutePath
   if fileExists
   then
-    Just <$> ByteStringLazy.readFile absolutePath
+    Right <$> ByteStringLazy.readFile absolutePath
   else
-    return Nothing
+    return $ Left Error

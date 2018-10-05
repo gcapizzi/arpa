@@ -12,7 +12,7 @@ import qualified Data.ByteString.Lazy.Char8 as ByteStringLazyChar8
 import qualified Network.Wai as Wai
 import qualified Network.HTTP.Types.Status as Status
 
-import Render
+import qualified Render
 
 application :: Wai.Application
 application request respond = handle request >>= respond
@@ -25,11 +25,14 @@ invalidPathResponse = Wai.responseLBS Status.badRequest400 [] (ByteStringLazyCha
 
 fileResponse :: FilePath -> IO Wai.Response
 fileResponse path = do
-  maybeBody <- renderFile path
-  return $ maybe notFoundResponse okResponse maybeBody
+  bodyOrError <- Render.renderFile path
+  return $ either errorResponse okResponse bodyOrError
 
 okResponse :: ByteStringLazy.ByteString -> Wai.Response
 okResponse = Wai.responseLBS Status.ok200 []
+
+errorResponse :: Render.Error -> Wai.Response
+errorResponse _ = notFoundResponse
 
 notFoundResponse :: Wai.Response
 notFoundResponse = Wai.responseLBS Status.notFound404 [] (ByteStringLazyChar8.pack "File not found")
