@@ -4,21 +4,23 @@ import Test.Hspec
 
 import Control.Concurrent
 import Data.ByteString.Lazy (ByteString)
-import Network.HTTP.Client
 import Network.HTTP.Types.Status
+import qualified Network.HTTP.Client as HTTPClient
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Application
 
 data Response = Response Status ByteString deriving (Eq, Show)
 
-get manager path = do
-  req <- parseRequest $ "GET http://localhost:8080" ++ path
-  res <- httpLbs req manager
-  return $ Response (responseStatus res) (responseBody res)
+get :: HTTPClient.Manager -> String -> IO Response
+get manager reqPath = do
+  req <- HTTPClient.parseRequest $ "GET http://localhost:8080" ++ reqPath
+  res <- HTTPClient.httpLbs req manager
+  return $ Response (HTTPClient.responseStatus res) (HTTPClient.responseBody res)
 
+setUp :: IO HTTPClient.Manager
 setUp = do
-  forkIO $ Warp.run 8080 Application.application
-  newManager defaultManagerSettings
+  _ <- forkIO $ Warp.run 8080 Application.application
+  HTTPClient.newManager HTTPClient.defaultManagerSettings
 
 main :: IO ()
 main = hspec $ beforeAll setUp $
