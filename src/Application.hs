@@ -11,7 +11,8 @@ import qualified Data.ByteString.Lazy as ByteStringLazy
 import qualified Data.ByteString.Lazy.Char8 as ByteStringLazyChar8
 import qualified Network.Wai as Wai
 import qualified Network.HTTP.Types.Status as Status
-import qualified System.Directory as Directory
+
+import Render
 
 application :: Wai.Application
 application request respond = handle request >>= respond
@@ -24,13 +25,8 @@ invalidPathResponse = Wai.responseLBS Status.badRequest400 [] (ByteStringLazyCha
 
 fileResponse :: FilePath -> IO Wai.Response
 fileResponse path = do
-  absolutePath <- Directory.makeAbsolute path
-  fileExists <- Directory.doesFileExist absolutePath
-  if fileExists
-  then
-    okResponse <$> ByteStringLazy.readFile absolutePath
-  else
-    return notFoundResponse
+  maybeBody <- renderFile path
+  return $ maybe notFoundResponse okResponse maybeBody
 
 okResponse :: ByteStringLazy.ByteString -> Wai.Response
 okResponse = Wai.responseLBS Status.ok200 []
