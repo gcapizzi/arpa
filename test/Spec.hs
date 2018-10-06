@@ -3,6 +3,8 @@
 import Test.Hspec
 
 import Control.Concurrent
+import Control.Exception (catch, SomeException)
+import Control.Monad (void)
 import Data.ByteString.Lazy (ByteString)
 import Network.HTTP.Types.Status
 import qualified Network.HTTP.Client as HTTPClient
@@ -20,7 +22,15 @@ get manager reqPath = do
 setUp :: IO HTTPClient.Manager
 setUp = do
   _ <- forkIO $ Warp.run 8080 Application.application
-  HTTPClient.newManager HTTPClient.defaultManagerSettings
+  manager <- HTTPClient.newManager HTTPClient.defaultManagerSettings
+  waitForServer manager
+  return manager
+
+waitForServer :: HTTPClient.Manager -> IO ()
+waitForServer manager = catch (void $ get manager "/") retry
+  where
+    retry :: SomeException -> IO ()
+    retry _ = waitForServer manager
 
 main :: IO ()
 main = hspec $ beforeAll setUp $
