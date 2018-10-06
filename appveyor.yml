@@ -8,10 +8,6 @@ before_test:
 
 clone_folder: "c:\\stack"
 
-image:
-- Visual Studio 2015
-- Visual Studio 2017
-
 environment:
   global:
     STACK_ROOT: "c:\\sr"
