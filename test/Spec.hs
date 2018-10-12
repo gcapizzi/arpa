@@ -47,3 +47,20 @@ main = hspec $ beforeAll setUp $
         get manager "/test/../test/fixtures/mattina.txt" `shouldReturn` Response badRequest400 "Invalid path"
         get manager "/test/..%2Ftest/fixtures/mattina.txt" `shouldReturn` Response notFound404 "File not found"
         get manager "/test/fixtures/foo..txt" `shouldReturn` Response notFound404 "File not found"
+
+    context "when requesting an Markdown file" $ do
+      context "with the .md extension" $
+        it "returns a 404 response" $ \manager ->
+          get manager "/test/fixtures/mattina.md" `shouldReturn` Response notFound404 "File not found"
+
+      context "with the .html extension" $
+        it "returns the rendered file" $ \manager ->
+          get manager "/test/fixtures/mattina.html" `shouldReturn` Response ok200 "<p>M'illumino\nd'immenso</p>\n"
+
+      context "with no extension" $
+        it "returns the rendered file" $ \manager ->
+          get manager "/test/fixtures/mattina" `shouldReturn` Response ok200 "<p>M'illumino\nd'immenso</p>\n"
+
+      context "with another random extension" $
+        it "returns a 404 response" $ \manager ->
+          get manager "/test/fixtures/mattina.csv" `shouldReturn` Response notFound404 "File not found"
