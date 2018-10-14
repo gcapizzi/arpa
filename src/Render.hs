@@ -17,37 +17,50 @@ data Error = FileNotFound
 
 renderFile :: FilePath -> IO (Either Error ByteStringLazy.ByteString)
 renderFile path
-  | FilePath.takeExtension path == ".md" = return $ Left FileNotFound
-  | isValidPath path = do
-    absolutePath <- Directory.makeAbsolute (dropRoot path)
-    fileExists <- Directory.doesFileExist absolutePath
-    if fileExists
-    then
-      Right <$> ByteStringLazy.readFile absolutePath
-    else renderMarkdown absolutePath
-  | otherwise = return $ Left InvalidPath
-
-renderMarkdown :: FilePath -> IO (Either Error ByteStringLazy.ByteString)
-renderMarkdown absolutePath = do
-  let extension = FilePath.takeExtension absolutePath
-  if extension == "" || extension == ".html"
-  then do
-    let mdAbsolutePath = FilePath.replaceExtension absolutePath "md"
-    mdFileExists <- Directory.doesFileExist mdAbsolutePath
-    if mdFileExists
-    then do
-      mdFileContents <- TextLazyIO.readFile mdAbsolutePath
-      let strictMd5FileContents = TextLazy.toStrict mdFileContents
-      let strictCommonmark = CMark.commonmarkToHtml [] [] strictMd5FileContents
-      let lazyCommonmark = TextLazy.fromStrict strictCommonmark
-      return $ Right $ TextLazyEncoding.encodeUtf8 lazyCommonmark
-    else
-      return $ Left FileNotFound
-  else
-    return $ Left FileNotFound
+  | not (isValidPath path) = return $ Left InvalidPath
+  | isHiddenPath path = return $ Left FileNotFound
+  | isDynamicPath path = renderDynamicFile path
+  | otherwise = serveStaticFile path
 
 isValidPath :: FilePath -> Bool
 isValidPath = not . isInfixOf "../"
+
+isHiddenPath :: FilePath -> Bool
+isHiddenPath path = FilePath.takeExtension path == ".md"
+
+isDynamicPath :: FilePath -> Bool
+isDynamicPath path = extension == ".html" || extension == ""
+  where extension = FilePath.takeExtension path
+
+renderDynamicFile :: FilePath -> IO (Either Error ByteStringLazy.ByteString)
+renderDynamicFile path = do
+  absolutePath <- makeAbsolutePath path
+  fileExists <- Directory.doesFileExist absolutePath
+  if fileExists
+  then Right <$> ByteStringLazy.readFile absolutePath
+  else renderMarkdownFile absolutePath
+
+renderMarkdownFile :: FilePath -> IO (Either Error ByteStringLazy.ByteString)
+renderMarkdownFile absolutePath = do
+  let mdAbsolutePath = FilePath.replaceExtension absolutePath "md"
+  mdFileExists <- Directory.doesFileExist mdAbsolutePath
+  if mdFileExists
+  then Right . renderMarkdown <$> TextLazyIO.readFile mdAbsolutePath
+  else return $ Left FileNotFound
+
+renderMarkdown :: TextLazy.Text -> ByteStringLazy.ByteString
+renderMarkdown = TextLazyEncoding.encodeUtf8 . TextLazy.fromStrict . CMark.commonmarkToHtml [] [] . TextLazy.toStrict
+
+serveStaticFile :: FilePath -> IO (Either Error ByteStringLazy.ByteString)
+serveStaticFile path = do
+  absolutePath <- makeAbsolutePath path
+  fileExists <- Directory.doesFileExist absolutePath
+  if fileExists
+  then Right <$> ByteStringLazy.readFile absolutePath
+  else return $ Left FileNotFound
+
+makeAbsolutePath :: FilePath -> IO FilePath
+makeAbsolutePath = Directory.makeAbsolute . dropRoot
 
 dropRoot :: FilePath -> FilePath
 dropRoot = drop 1
